@@ -1,0 +1,289 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کاروخونه</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.9/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="/styles.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Vazir', sans-serif; }
+    @font-face { font-family: 'Vazir'; src: url('https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.woff') format('woff'); }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const arts = [
+      { id: 1, name: 'قلاب‌بافی', description: 'بافت انواع محصولات با نخ و قلاب' },
+      { id: 2, name: 'گلیم‌بافی', description: 'بافت گلیم‌های سنتی و مدرن' },
+      { id: 3, name: 'حصیربافی', description: 'ساخت محصولات با حصیر' },
+      { id: 4, name: 'دومیل‌بافی', description: 'بافت با دو میل برای لباس و اکسسوری' },
+      { id: 5, name: 'قالی‌بافی', description: 'بافت فرش‌های سنتی' },
+    ];
+
+    const courses = [
+      { id: 1, title: 'آموزش رایگان قلاب‌بافی', type: 'رایگان', description: 'یادگیری اصول اولیه قلاب‌بافی' },
+      { id: 2, title: 'آموزش پیشرفته گلیم‌بافی', type: 'پولی', description: 'تکنیک‌های حرفه‌ای گلیم‌بافی', price: '500,000 تومان' },
+      { id: 3, title: 'آموزش حصیربافی', type: 'رایگان', description: 'ساخت محصولات حصیری' },
+    ];
+
+    const Home = ({ setPage }) => (
+      <div className="container mx-auto p-4">
+        <h1 className="text-4xl font-bold text-center mb-6">کاروخونه</h1>
+        <p className="text-lg text-gray-700 mb-8 text-center">
+          به کاروخونه خوش آمدید! اینجا جایی است که زنان می‌توانند با یادگیری هنرهای دستی مانند قلاب‌بافی، گلیم‌بافی و قالی‌بافی در خانه کسب درآمد کنند. ما مواد اولیه را برای شما ارسال می‌کنیم و پس از تحویل سفارش، دستمزد شما را پرداخت می‌کنیم.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold mb-4">چگونه کار می‌کند؟</h2>
+            <ul className="list-disc pr-6">
+              <li>ثبت‌نام کنید و هنر مورد نظر خود را انتخاب کنید.</li>
+              <li>اگر نیاز به آموزش دارید، در دوره‌های رایگان یا پولی ما شرکت کنید.</li>
+              <li>مواد اولیه را دریافت کنید، محصول را بسازید و برای ما ارسال کنید.</li>
+              <li>دستمزد خود را دریافت کنید!</li>
+            </ul>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold mb-4">هنرهای موجود</h2>
+            <ul className="list-disc pr-6">
+              {arts.map(art => (
+                <li key={art.id}>{art.name}: {art.description}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="text-center">
+          <button
+            onClick={() => setPage('courses')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+          >
+            مشاهده دوره‌های آموزشی
+          </button>
+        </div>
+      </div>
+    );
+
+    const Courses = ({ setPage }) => (
+      <div className="container mx-auto p-4">
+        <h1 className="text-4xl font-bold text-center mb-6">دوره‌های آموزشی</h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {courses.map(course => (
+            <div key={course.id} className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
+              <p className="text-gray-600 mb-2">نوع: {course.type}</p>
+              {course.price && <p className="text-gray-600 mb-2">هزینه: {course.price}</p>}
+              <p className="text-gray-700">{course.description}</p>
+              <button
+                className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                onClick={() => alert('ثبت‌نام در دوره')}
+              >
+                ثبت‌نام
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="text-center mt-8">
+          <button
+            onClick={() => setPage('home')}
+            className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700"
+          >
+            بازگشت به صفحه اصلی
+          </button>
+        </div>
+      </div>
+    );
+
+    const UserDashboard = () => {
+      const [orders, setOrders] = useState(5);
+      const [income, setIncome] = useState(2500000);
+      const [selectedArt, setSelectedArt] = useState(arts[0].name);
+
+      useEffect(() => {
+        const ctx = document.getElementById('incomeChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر'],
+            datasets: [{
+              label: 'درآمد (تومان)',
+              data: [1000000, 1500000, 2000000, 2500000],
+              borderColor: 'rgba(75, 192, 192, 1)',
+              fill: false,
+            }],
+          },
+          options: { scales: { y: { beginAtZero: true } } },
+        });
+      }, []);
+
+      return (
+        <div className="container mx-auto p-4">
+          <h1 className="text-4xl font-bold text-center mb-6">داشبورد کاربر</h1>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-2">انتخاب هنر</h2>
+              <select
+                value={selectedArt}
+                onChange={(e) => setSelectedArt(e.target.value)}
+                className="w-full p-2 border rounded"
+              >
+                {arts.map(art => (
+                  <option key={art.id} value={art.name}>{art.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-2">درآمد</h2>
+              <p className="text-2xl text-green-600">{income.toLocaleString()} تومان</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-2">سفارشات تحویلی</h2>
+              <p className="text-2xl text-blue-600">{orders} سفارش</p>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">نمودار درآمد</h2>
+            <canvas id="incomeChart"></canvas>
+          </div>
+        </div>
+      );
+    };
+
+    const AdminDashboard = () => {
+      const [users, setUsers] = useState([
+        { id: 1, name: 'زهرا احمدی', art: 'قلاب‌بافی', income: 3000000, orders: 8 },
+        { id: 2, name: 'مریم رضایی', art: 'گلیم‌بافی', income: 4500000, orders: 12 },
+      ]);
+
+      return (
+        <div className="container mx-auto p-4">
+          <h1 className="text-4xl font-bold text-center mb-6">داشبورد مدیریت</h1>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">کاربران</h2>
+            <table className="w-full text-right">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2">نام</th>
+                  <th className="p-2">هنر</th>
+                  <th className="p-2">درآمد</th>
+                  <th className="p-2">سفارشات</th>
+                  <th className="p-2">عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id} className="border-b">
+                    <td className="p-2">{user.name}</td>
+                    <td className="p-2">{user.art}</td>
+                    <td className="p-2">{user.income.toLocaleString()} تومان</td>
+                    <td className="p-2">{user.orders}</td>
+                    <td className="p-2">
+                      <button
+                        className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                        onClick={() => alert(`حذف کاربر ${user.name}`)}
+                      >
+                        حذف
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [page, setPage] = useState('home');
+
+      return (
+        <div>
+          <nav className="bg-blue-800 text-white p-4">
+            <div className="container mx-auto flex justify-between items-center">
+              <h1 className="text-2xl font-bold">کاروخونه</h1>
+              <div>
+                <button
+                  onClick={() => setPage('home')}
+                  className="mx-2 hover:underline"
+                >
+                  خانه
+                </button>
+                <button
+                  onClick={() => setPage('courses')}
+                  className="mx-2 hover:underline"
+                >
+                  آموزش
+                </button>
+                <button
+                  onClick={() => setPage('user')}
+                  className="mx-2 hover:underline"
+                >
+                  داشبورد کاربر
+                </button>
+                <button
+                  onClick={() => setPage('admin')}
+                  className="mx-2 hover:underline"
+                >
+                  داشبورد مدیریت
+                </button>
+              </div>
+            </div>
+          </nav>
+          {page === 'home' && <Home setPage={setPage} />}
+          {page === 'courses' && <Courses setPage={setPage} />}
+          {page === 'user' && <UserDashboard />}
+          {page === 'admin' && <AdminDashboard />}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
